@@ -35,11 +35,36 @@ function App() {
   const [firstname, setFirstname] = useState('');
   const [lastname, setLastname] = useState('');
   const [mail, setMain] = useState('');
+  const [allUserData, setAllUserData] = useState([]);
+  
 
   useEffect(() => {
     createCollectionInIndexDB()
+    getAllData()
   }, [])
 
+
+  const getAllData=()=>{
+    const dbpromis= idb.open("test-db", 1)
+    dbpromis.onsuccess=()=>{
+      const db= dbpromis.result;
+      const tx= db.transaction('userData','readonly');
+      const userData=tx.objectStore('userData');
+
+      const users=userData.getAll()
+      users.onsuccess=(query)=>{
+        setAllUserData(query.srcElement.result)
+      }
+
+      users.error=(e)=>{
+        console.log(e)
+      }
+      tx.oncomplete=()=>{
+        db.close();
+      }
+
+  }
+}
   const handleSubmit=(e)=>{
     const dbpromis= idb.open("test-db", 1)
 
@@ -50,7 +75,7 @@ function App() {
         const userData=tx.objectStore('userData');
 
         const users= userData.put({
-          id:1,
+          id:allUserData?.length+1,
           firstname,
           lastname,
           mail
@@ -61,6 +86,8 @@ function App() {
           tx.oncomplete=()=>{
             db.close();
           }
+          alert('Added');
+          getAllData()
         }
 
         users.error=(e)=>{
@@ -87,15 +114,19 @@ function App() {
             </tr>
           </thead>
           <tbody>
-            <tr>
-              <td></td>
-              <td></td>
-              <td></td>
+          {
+            allUserData.map((e,index)=>(
+              <tr key={index}>
+                <td>{e.firstname}</td>
+                <td>{e.lastname}</td>
+                <td>{e.mail}</td>
               <td>
                 <button className='btn btn-success'>Edit</button>
                 <button className='btn btn-danger'>Delete</button>
               </td>
             </tr>
+            ))
+          }
           </tbody>
         </table>
       </div>
@@ -105,7 +136,7 @@ function App() {
           <div className='fom-group'>
             <label>First name</label>
             <input type='text' className='form-control' onChange={(e) => {
-              setLastname(e.target.value)
+              setFirstname(e.target.value)
             }} value={firstname}/>
 
           </div>
@@ -113,7 +144,7 @@ function App() {
           <div className='fom-group'>
             <label>Last name</label>
             <input type='text' className='form-control' onChange={(e) => {
-              setFirstname(e.target.value)
+              setLastname(e.target.value)
             }} value={lastname}/>
 
           </div>
